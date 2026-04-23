@@ -1,118 +1,4 @@
-import pandas as pd
-import numpy as np
-import json
-import sys
-import os
-
-sys.stdout.reconfigure(encoding="utf-8")
-
-print("=" * 60)
-print("  Dashboard Acidentes de Trabalho — Brasil (Final)")
-print("=" * 60)
-
-# 1. Caminho robusto (com ou sem espaço/underscore)
-base_dir = r"C:\Users\Administrator\Downloads\17458229\data\data\compiled database"
-csv_path = os.path.join(base_dir, "completeDatabase.csv")
-if not os.path.exists(csv_path):
-    base_dir = r"C:\Users\Administrator\Downloads\17458229\data\data\compiled_database"
-    csv_path = os.path.join(base_dir, "completeDatabase.csv")
-
-if not os.path.exists(csv_path):
-    print(f"\n❌ ERRO: CSV não encontrado em:\n{base_dir}")
-    sys.exit(1)
-
-print("\n[1/5] Carregando base de dados...")
-df = pd.read_csv(csv_path, sep=";", low_memory=False)
-print(f"✓ {len(df):,} registros carregados.")
-
-# 2. Limpeza de colunas climáticas
-print("[2/5] Padronizando variáveis climáticas...")
-clim_cols = ['DRY BULB TEMPERATURE', 'RELATIVE HUMIDITY', 'WIND SPEED',
-             'PRECIPITATION', 'ATMOSPHERIC PRESSURE', 'DEW POINT TEMPERATURE']
-for c in clim_cols:
-    if c in df.columns:
-        df[c] = pd.to_numeric(df[c].astype(str).str.replace(',', '.'), errors='coerce')
-
-# 3. Cálculo do Humidex (HX) e Categorização
-print("[3/5] Calculando Índice de Estresse Térmico (Humidex)...")
-mask = df['DRY BULB TEMPERATURE'].notna() & df['RELATIVE HUMIDITY'].notna()
-df['HUMIDEX'] = np.nan
-
-if mask.any():
-    T = df.loc[mask, 'DRY BULB TEMPERATURE']
-    RH = df.loc[mask, 'RELATIVE HUMIDITY']
-    # Fórmula: HX = T + 0.5555 * (e - 10) | e = 6.112 * exp(17.67*T/(T+243.5)) * RH/100
-    e = 6.112 * np.exp((17.67 * T) / (T + 243.5)) * (RH / 100.0)
-    df.loc[mask, 'HUMIDEX'] = T + 0.5555 * (e - 10.0)
-
-bins_hx = [-np.inf, 7.12, 20.8, 34.5, 48.2, np.inf]
-labels_hx = ['Nível I', 'Nível II', 'Nível III', 'Nível IV', 'Nível V']
-df['HUMIDEX_NIVEL'] = pd.cut(df['HUMIDEX'], bins=bins_hx, labels=labels_hx)
-
-# 4. Agregações
-print("[4/5] Agregando dados para visualização...")
-
-def agg_count(col, map_dict=None, head=None):
-    s = df[col]
-    if map_dict: s = s.map(map_dict)
-    c = s.value_counts()
-    if head: c = c.head(head)
-    return {"labels": c.index.astype(str).tolist(), "values": c.values.tolist()}
-
-kpis = {
-    "total": f"{len(df):,}".replace(',','.'),
-    "obitos": f"{int((df['EVOLUCAO']==5.0).sum()):,}".replace(',','.'),
-    "temp_media": f"{df['DRY BULB TEMPERATURE'].mean():.1f}°C",
-    "anos": str(df['NU_ANO'].nunique())
-}
-
-data_year = agg_count('NU_ANO')
-data_sexo = agg_count('CS_SEXO', {'M':'Masculino','F':'Feminino','I':'Ignorado'})
-data_evolucao = agg_count('EVOLUCAO', {1.0:'Cura',2.0:'Incap. Temp.',3.0:'Incap. Perm. Parcial',4.0:'Incap. Perm. Total',5.0:'Óbito',6.0:'Óbito Outros',7.0:'Outro',9.0:'Ignorado'})
-data_uf = agg_count('SG_UF_NOT', head=15)
-data_tipo = agg_count('TIPO_ACID', {1.0:'Típico',2.0:'Trajeto',9.0:'Ignorado'})
-data_hora = agg_count('HORA_ACID')
-
-ty = df.groupby('NU_ANO')['DRY BULB TEMPERATURE'].mean().dropna()
-data_temp = {"labels": ty.index.astype(str).tolist(), "values": [round(v,2) for v in ty.values]}
-
-df['PART_CORP1_C'] = df['PART_CORP1'].dropna().astype(int).astype(str).str.zfill(2)
-corpo_map = {'01':'Olho','02':'Cabeça','03':'Pescoço','04':'Tórax','05':'Abdômen','06':'Mão','07':'Membro Sup.','08':'Membro Inf.','09':'Pé','10':'Corpo Todo','11':'Outro','99':'Ignorado'}
-data_corpo = agg_count('PART_CORP1_C', corpo_map, head=10)
-
-tv = df['DRY BULB TEMPERATURE'].dropna()
-if len(tv) > 0:
-    _, bins_t = pd.cut(tv, bins=20, retbins=True)
-    h = pd.cut(tv, bins=bins_t).value_counts().sort_index()
-    data_hist_temp = {"labels": [f"{i.left:.1f}–{i.right:.1f}" for i in h.index], "values": h.values.tolist()}
-else:
-    data_hist_temp = {"labels":[], "values":[]}
-
-# [NOVO] Agregações Humidex
-yearly_hx = df.groupby('NU_ANO').agg({'DRY BULB TEMPERATURE':'mean', 'HUMIDEX':'mean'}).dropna()
-data_humidex_line = {
-    "labels": yearly_hx.index.astype(str).tolist(),
-    "temp": [round(v,2) for v in yearly_hx['DRY BULB TEMPERATURE']],
-    "hx": [round(v,2) for v in yearly_hx['HUMIDEX']]
-}
-
-hx_counts = df['HUMIDEX_NIVEL'].value_counts().sort_index()
-data_humidex_bar = {
-    "labels": labels_hx,
-    "values": [int(hx_counts.get(l, 0)) for l in labels_hx]
-}
-
-all_data = {
-    "kpis": kpis, "year": data_year, "sexo": data_sexo, "evolucao": data_evolucao,
-    "uf": data_uf, "temp": data_temp, "tipo": data_tipo, "corpo": data_corpo,
-    "hist_temp": data_hist_temp, "hora": data_hora,
-    "humidex_line": data_humidex_line, "humidex_bar": data_humidex_bar
-}
-
-# 5. Geração do HTML Completo
-print("[5/5] Gerando dashboard HTML...")
-
-html_template = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -191,7 +77,7 @@ footer{text-align:center;margin-top:30px;color:var(--muted);font-size:.85rem;pad
 </div>
 
 <script>
-const D = __JSONDATA__;
+const D = {"kpis": {"total": "2.530.547", "obitos": "38.427", "temp_media": "21.5°C", "anos": "19"}, "year": {"labels": ["2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2013", "2015", "2016", "2014", "2012", "2011", "2010", "2009", "2008", "2007", "2006"], "values": [503542, 410228, 301107, 221034, 176859, 110731, 100267, 92585, 88440, 87756, 85242, 83495, 75481, 60971, 44767, 35465, 31317, 19725, 1535]}, "sexo": {"labels": ["Masculino", "Feminino", "Ignorado"], "values": [1920801, 609373, 373]}, "evolucao": {"labels": ["Incap. Temp.", "Cura", "Ignorado", "Incap. Perm. Parcial", "Óbito", "Outro", "Incap. Perm. Total", "Óbito Outros"], "values": [1130296, 829063, 321964, 50921, 38427, 38212, 5078, 2133]}, "uf": {"labels": ["35.0", "43.0", "41.0", "31.0", "42.0", "52.0", "29.0", "33.0", "50.0", "23.0", "51.0", "26.0", "21.0", "53.0", "11.0"], "values": [833931, 298198, 254794, 222231, 113145, 96354, 88086, 72848, 64862, 63348, 53804, 47458, 34081, 33916, 33440]}, "temp": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [16.07, 20.3, 20.23, 21.2, 21.59, 21.25, 21.81, 21.32, 22.29, 22.2, 21.85, 21.85, 21.54, 21.85, 21.22, 20.61, 20.8, 21.62, 22.23]}, "tipo": {"labels": ["Típico", "Trajeto", "Ignorado"], "values": [1909967, 424927, 83695]}, "corpo": {"labels": ["Mão", "Membro Sup.", "Membro Inf.", "Pé", "Cabeça", "Corpo Todo", "Olho", "Outro", "Tórax", "Ignorado"], "values": [713929, 371660, 355059, 232600, 214723, 146033, 135841, 131235, 84489, 39706]}, "hist_temp": {"labels": ["-9.1–-5.5", "-5.5–-2.1", "-2.1–1.4", "1.4–4.8", "4.8–8.3", "8.3–11.7", "11.7–15.2", "15.2–18.6", "18.6–22.1", "22.1–25.5", "25.5–29.0", "29.0–32.4", "32.4–35.9", "35.9–39.3", "39.3–42.8", "42.8–46.2", "46.2–49.7", "49.7–53.1", "53.1–56.6", "56.6–60.0"], "values": [5, 126, 1472, 4775, 17943, 63419, 176097, 493848, 645609, 541393, 333317, 187035, 51768, 7762, 261, 0, 0, 0, 0, 1]}, "hora": {"labels": ["10.0", "9.0", "8.0", "15.0", "11.0", "14.0", "16.0", "7.0", "13.0", "17.0", "12.0", "18.0", "6.0", "19.0", "20.0", "5.0", "21.0", "22.0", "0.0", "23.0", "1.0", "4.0", "2.0", "3.0"], "values": [210258, 191974, 171552, 156229, 155059, 152761, 144791, 141114, 120342, 106821, 101939, 70871, 70369, 44489, 31519, 29566, 24628, 22967, 20603, 18707, 16339, 15848, 12824, 12278]}, "humidex_line": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "temp": [16.07, 20.3, 20.23, 21.2, 21.59, 21.25, 21.81, 21.32, 22.29, 22.2, 21.85, 21.85, 21.54, 21.85, 21.22, 20.61, 20.8, 21.62, 22.23], "hx": [18.38, 24.23, 23.86, 25.84, 26.31, 25.78, 26.64, 25.94, 26.94, 26.95, 26.56, 26.36, 26.23, 26.63, 25.81, 24.68, 25.15, 26.53, 27.42]}, "humidex_bar": {"labels": ["Nível I", "Nível II", "Nível III", "Nível IV", "Nível V"], "values": [19816, 572533, 1570865, 361339, 278]}};
 document.getElementById('k-total').textContent = D.kpis.total;
 document.getElementById('k-obitos').textContent = D.kpis.obitos;
 document.getElementById('k-temp').textContent = D.kpis.temp_media;
@@ -224,14 +110,4 @@ mk('c-hx-line','line',D.humidex_line.labels,[
 mk('c-hx-bar','bar',D.humidex_bar.labels,[{label:'Acidentes Notificados',data:D.humidex_bar.values,backgroundColor:['#22c55e','#84cc16','#eab308','#f97316','#ef4444'],borderRadius:6}],{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}});
 </script>
 </body>
-</html>"""
-
-html_final = html_template.replace("__JSONDATA__", json.dumps(all_data, ensure_ascii=False))
-out_path = os.path.join(base_dir, "dashboard_acidentes.html")
-with open(out_path, "w", encoding="utf-8") as f:
-    f.write(html_final)
-
-print(f"\n✅ SUCESSO! Dashboard gerado em:")
-print(f"📂 {out_path}")
-print("\nAbra o arquivo no seu navegador (Chrome/Edge).")
-print("=" * 60)
+</html>
