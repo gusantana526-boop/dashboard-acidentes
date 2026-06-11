@@ -837,7 +837,6 @@
                     borderWidth: 1,
                     cornerRadius: 12,
                     padding: 14,
-                    backdropFilter: 'blur(20px)',
                     titleFont: { weight: '700', family: "'Cabinet Grotesk', sans-serif" }
                 }
             },
@@ -865,7 +864,8 @@
         };
 
         function gradientFill(ctx, color) {
-            const gradient = ctx.createLinearGradient(0, 0, 0, 380);
+            const h = ctx.canvas.parentElement.clientHeight || 380;
+            const gradient = ctx.createLinearGradient(0, 0, 0, h);
             gradient.addColorStop(0, color.replace(')', ', 0.25)').replace('rgb', 'rgba'));
             gradient.addColorStop(1, color.replace(')', ', 0.02)').replace('rgb', 'rgba'));
             return gradient;
