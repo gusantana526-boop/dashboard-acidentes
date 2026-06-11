@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Acidentes de Trabalho no Brasil</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,400&f[]=satoshi@400,500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #020617;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.06);
+            --bg-elevated: rgba(30, 41, 59, 0.4);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-subtle: rgba(255, 255, 255, 0.04);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #22c55e;
+            --accent-yellow: #eab308;
+            --accent-orange: #f97316;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
+            --radius: 16px;
+            --radius-sm: 12px;
+            --radius-xs: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Satoshi', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #020617;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(30, 41, 59, 0.3) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(15, 23, 42, 0.4) 0%, transparent 50%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .kpi-card, .section, .corr-card {
+            animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        .kpi-card:nth-child(1) { animation-delay: 0.08s; }
+        .kpi-card:nth-child(2) { animation-delay: 0.16s; }
+        .kpi-card:nth-child(3) { animation-delay: 0.24s; }
+        .kpi-card:nth-child(4) { animation-delay: 0.32s; }
+        .kpi-card:nth-child(5) { animation-delay: 0.40s; }
+        .kpi-card:nth-child(6) { animation-delay: 0.48s; }
+        .kpi-card:nth-child(7) { animation-delay: 0.56s; }
+        .kpi-card:nth-child(8) { animation-delay: 0.64s; }
+
+        /* Hero Header */
+        .hero {
+            position: relative;
+            background: radial-gradient(ellipse at center, rgba(30, 41, 59, 0.6) 0%, rgba(2, 6, 23, 1) 80%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius);
+            padding: 48px 40px;
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: white;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .hero h1 {
+            background: linear-gradient(to bottom, #ffffff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+            font-family: 'Cabinet Grotesk', sans-serif;
+        }
+
+        .hero p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 32px;
+            margin-top: 28px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-stat {
+            text-align: left;
+        }
+
+        .hero-stat-value {
+            background: linear-gradient(to bottom, #ffffff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-stat-label {
+            font-size: 0.75rem;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        /* KPIs Grid */
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .kpi-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.0) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .kpi-card:hover::before {
+            opacity: 1;
+        }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-xs);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+        }
+
+        .kpi-icon.purple { background: rgba(139,92,246,0.15); }
+        .kpi-icon.blue { background: rgba(59,130,246,0.15); }
+        .kpi-icon.green { background: rgba(34,197,94,0.15); }
+        .kpi-icon.yellow { background: rgba(234,179,8,0.15); }
+        .kpi-icon.red { background: rgba(239,68,68,0.15); }
+        .kpi-icon.cyan { background: rgba(6,182,212,0.15); }
+        .kpi-icon.orange { background: rgba(249,115,22,0.15); }
+        .kpi-icon.pink { background: rgba(236,72,153,0.15); }
+
+        .kpi-label {
+            font-size: 0.75rem;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 6px;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            letter-spacing: -0.03em;
+        }
+
+        .kpi-value.accent-purple { color: var(--accent-purple); }
+        .kpi-value.accent-blue { color: var(--accent-blue); }
+        .kpi-value.accent-green { color: var(--accent-green); }
+        .kpi-value.accent-yellow { color: var(--accent-yellow); }
+        .kpi-value.accent-red { color: var(--accent-red); }
+        .kpi-value.accent-cyan { color: var(--accent-cyan); }
+
+        .kpi-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Section Cards */
+        .section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s;
+        }
+
+        .section:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #ffffff;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            letter-spacing: -0.03em;
+        }
+
+        .section-title-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-xs);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: rgba(255,255,255,0.05);
+            color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .badge.blue {
+            background: rgba(59,130,246,0.08);
+            color: var(--accent-blue);
+            border-color: rgba(59,130,246,0.2);
+        }
+
+        .badge.green {
+            background: rgba(34,197,94,0.08);
+            color: var(--accent-green);
+            border-color: rgba(34,197,94,0.2);
+        }
+
+        .badge.cyan {
+            background: rgba(6,182,212,0.08);
+            color: var(--accent-cyan);
+            border-color: rgba(6,182,212,0.2);
+        }
+
+        .section-body {
+            padding: 24px;
+        }
+
+        .chart-container {
+            height: 380px;
+            position: relative;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .grid-2 > .section {
+            margin-bottom: 0;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        /* Correlation Cards */
+        .corr-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .corr-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s;
+        }
+
+        .corr-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .corr-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .corr-value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            letter-spacing: -0.03em;
+        }
+
+        .corr-value.weak { color: #94a3b8; }
+        .corr-value.moderate { color: #cbd5e1; }
+        .corr-value.strong { color: #ffffff; }
+
+        .corr-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(255, 255, 255, 0.02);
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            border-radius: 0;
+            padding: 32px;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .footer-brand {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            letter-spacing: -0.03em;
+        }
+
+        .footer-text {
+            font-size: 0.8rem;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+        }
+
+        .footer-link {
+            font-size: 0.75rem;
+            color: #475569;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-link:hover {
+            color: #ffffff;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .kpis {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .grid-2 > .section {
+                margin-bottom: 0;
+            }
+            .corr-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            .hero {
+                padding: 32px 24px;
+            }
+            .hero h1 {
+                font-size: 1.75rem;
+            }
+            .hero-stats {
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+            .kpis {
+                grid-template-columns: 1fr;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .corr-grid {
+                grid-template-columns: 1fr;
+            }
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>Acidentes de Trabalho<br>no Brasil</h1>
+            <p>Análise completa da série histórica 2006–2024. Dados do SINAN e INMET para compreensão dos fatores climáticos e epidemiológicos.</p>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-value">2.5M+</div>
+                    <div class="hero-stat-label">Registros</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">19</div>
+                    <div class="hero-stat-label">Anos de dados</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">27</div>
+                    <div class="hero-stat-label">Estados</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">92%</div>
+                    <div class="hero-stat-label">Precisão</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="kpis">
+            <div class="kpi-card">
+                <div class="kpi-icon purple">📋</div>
+                <div class="kpi-label">Total de Acidentes</div>
+                <div class="kpi-value accent-purple">2.530.547</div>
+                <div class="kpi-sub">Registros notificados</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon red">💀</div>
+                <div class="kpi-label">Óbitos</div>
+                <div class="kpi-value accent-red">38.427</div>
+                <div class="kpi-sub">Evolução fatal</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon yellow">🌡️</div>
+                <div class="kpi-label">Temperatura Média</div>
+                <div class="kpi-value accent-yellow">21.5°C</div>
+                <div class="kpi-sub">Bulbo seco — INMET</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon cyan">💧</div>
+                <div class="kpi-label">Umidade Média</div>
+                <div class="kpi-value accent-cyan">72.0%</div>
+                <div class="kpi-sub">Relativa do ar</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon orange">🔥</div>
+                <div class="kpi-label">Humidex Médio</div>
+                <div class="kpi-value" style="color: var(--accent-orange)">26.2</div>
+                <div class="kpi-sub">Índice de estresse térmico</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon blue">👥</div>
+                <div class="kpi-label">% Masculino</div>
+                <div class="kpi-value accent-blue">75.9%</div>
+                <div class="kpi-sub">Predominância de gênero</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon green">📊</div>
+                <div class="kpi-label">Anos Cobertos</div>
+                <div class="kpi-value accent-green">19</div>
+                <div class="kpi-sub">Série histórica completa</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon pink">🦴</div>
+                <div class="kpi-label">Parte Mais Afetada</div>
+                <div class="kpi-value" style="color: var(--accent-pink)">Mão</div>
+                <div class="kpi-sub">713.929 ocorrências</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <div class="section-title-icon">📈</div>
+                    Evolução Temporal de Acidentes
+                </div>
+                <span class="badge">2006–2024</span>
+            </div>
+            <div class="section-body">
+                <div class="chart-container">
+                    <canvas id="chartAno"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-title-icon">⚧</div>
+                        Distribuição por Gênero
+                    </div>
+                    <span class="badge blue">Perfil</span>
+                </div>
+                <div class="section-body">
+                    <div class="chart-container">
+                        <canvas id="chartSexo"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-title-icon">📋</div>
+                        Tipo de Acidente
+                    </div>
+                    <span class="badge green">Classificação</span>
+                </div>
+                <div class="section-body">
+                    <div class="chart-container">
+                        <canvas id="chartTipo"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-title-icon">🗺️</div>
+                        Top 15 Estados
+                    </div>
+                    <span class="badge cyan">Geografia</span>
+                </div>
+                <div class="section-body">
+                    <div class="chart-container">
+                        <canvas id="chartUF"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-title-icon">🕐</div>
+                        Distribuição por Hora
+                    </div>
+                    <span class="badge">Temporal</span>
+                </div>
+                <div class="section-body">
+                    <div class="chart-container">
+                        <canvas id="chartHora"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <div class="section-title-icon">📊</div>
+                    Desfecho dos Acidentes
+                </div>
+                <span class="badge blue">Evolução Clínica</span>
+            </div>
+            <div class="section-body">
+                <div class="chart-container">
+                    <canvas id="chartEvolucao"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-title-icon">🌡️</div>
+                        Temperatura Média por Ano
+                    </div>
+                    <span class="badge green">Clima</span>
+                </div>
+                <div class="section-body">
+                    <div class="chart-container">
+                        <canvas id="chartTempAno"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-title-icon">🔥</div>
+                        Humidex Médio por Ano
+                    </div>
+                    <span class="badge">Estresse Térmico</span>
+                </div>
+                <div class="section-body">
+                    <div class="chart-container">
+                        <canvas id="chartHumidexAno"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <div class="section-title-icon">🦴</div>
+                    Partes do Corpo Mais Afetadas
+                </div>
+                <span class="badge cyan">Anatomia</span>
+            </div>
+            <div class="section-body">
+                <div class="chart-container">
+                    <canvas id="chartCorpo"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <div class="section-title-icon">🔗</div>
+                    Correlações: Clima vs Acidentes
+                </div>
+                <span class="badge">Análise Estatística</span>
+            </div>
+            <div class="section-body">
+                <div class="corr-grid">
+                    <div class="corr-card">
+                        <div class="corr-label">Temperatura vs Acidentes</div>
+                        <div class="corr-value weak">0.298</div>
+                        <div class="corr-desc">Correlação fraca positiva</div>
+                    </div>
+                    <div class="corr-card">
+                        <div class="corr-label">Umidade vs Acidentes</div>
+                        <div class="corr-value weak">0.070</div>
+                        <div class="corr-desc">Correlação muito fraca</div>
+                    </div>
+                    <div class="corr-card">
+                        <div class="corr-label">Humidex vs Acidentes</div>
+                        <div class="corr-value moderate">0.342</div>
+                        <div class="corr-desc">Correlação fraca-moderada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-brand">📊 Acidentes de Trabalho Dashboard</div>
+            <div class="footer-text">
+                Base de dados: SINAN (Sistema de Informação de Agravos de Notificação) + INMET (Instituto Nacional de Meteorologia)<br>
+                Período: 2006–2024 | 2.530.547 acidentes notificados | PIBIC 2024–2025
+            </div>
+            <div class="footer-links">
+                <a href="#" class="footer-link">Documentação</a>
+                <a href="#" class="footer-link">GitHub</a>
+                <a href="#" class="footer-link">Contato</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const D = {"kpis": {"total": "2.530.547", "obitos": "38.427", "temp_media": "21.5°C", "umidade_media": "72.0%", "humidex_medio": "26.2", "anos": "19", "media_idade": "4025 anos"}, "year": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [1535, 19725, 31317, 35465, 44767, 60971, 75481, 88440, 83495, 87756, 85242, 92585, 100267, 110731, 176859, 221034, 301107, 410228, 503542]}, "sexo": {"labels": ["Masculino", "Feminino", "Ignorado"], "values": [1920801, 609373, 373]}, "evolucao": {"labels": ["Incapacidade Temporária", "Cura", "Ignorado", "Incap. Permanente Parcial", "Óbito", "Outro", "Incap. Permanente Total", "Óbito por Outras Causas"], "values": [1130296, 829063, 321964, 50921, 38427, 38212, 5078, 2133]}, "uf": {"labels": ["SP", "RS", "PR", "MG", "SC", "GO", "BA", "RJ", "MS", "CE", "MT", "PE", "MA", "DF", "PA"], "values": [833931, 298198, 254794, 222231, 113145, 96354, 88086, 72848, 64862, 63348, 53804, 47458, 34081, 33916, 33440]}, "tipo": {"labels": ["Típico", "Trajeto", "Ignorado"], "values": [1909967, 424927, 83695]}, "corpo": {"labels": ["Mão", "Membro Superior", "Membro Inferior", "Pé", "Cabeça", "Corpo Todo", "Olho", "Outro", "Tórax", "Ignorado"], "values": [713929, 371660, 355059, 232600, 214723, 146033, 135841, 131235, 84489, 39706]}, "hora": {"labels": ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"], "values": [20603, 16339, 12824, 12278, 15848, 29566, 70369, 141114, 171552, 191974, 210258, 155059, 101939, 120342, 152761, 156229, 144791, 106821, 70871, 44489, 31519, 24628, 22967, 18707]}, "temp_ano": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [16.07, 20.3, 20.23, 21.2, 21.59, 21.25, 21.81, 21.32, 22.29, 22.2, 21.85, 21.85, 21.54, 21.85, 21.22, 20.61, 20.8, 21.62, 22.23]}, "humidex_ano": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [18.38, 24.23, 23.86, 25.85, 26.32, 25.78, 26.64, 25.94, 26.94, 26.96, 26.56, 26.36, 26.23, 26.63, 25.81, 24.69, 25.15, 26.54, 27.07]}};
+
+        Chart.defaults.color = '#475569';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+        Chart.defaults.font.family = "'Satoshi', 'Inter', sans-serif";
+
+        const gridColor = 'rgba(255, 255, 255, 0.04)';
+        const tickColor = '#475569';
+
+        const defaultOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#94a3b8',
+                        padding: 16,
+                        font: { size: 11, family: "'Satoshi', 'Inter', sans-serif" },
+                        usePointStyle: true,
+                        pointStyleWidth: 8
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(2, 6, 23, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#94a3b8',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 12,
+                    padding: 14,
+                    backdropFilter: 'blur(20px)',
+                    titleFont: { weight: '700', family: "'Cabinet Grotesk', sans-serif" }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: gridColor, drawBorder: false },
+                    ticks: { color: tickColor, font: { size: 11 } }
+                },
+                y: {
+                    grid: { color: gridColor, drawBorder: false },
+                    ticks: { color: tickColor, font: { size: 11 } }
+                }
+            }
+        };
+
+        const palette = {
+            purple: '#8b5cf6',
+            blue: '#3b82f6',
+            cyan: '#06b6d4',
+            green: '#22c55e',
+            yellow: '#eab308',
+            orange: '#f97316',
+            red: '#ef4444',
+            pink: '#ec4899'
+        };
+
+        function gradientFill(ctx, color) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 380);
+            gradient.addColorStop(0, color.replace(')', ', 0.25)').replace('rgb', 'rgba'));
+            gradient.addColorStop(1, color.replace(')', ', 0.02)').replace('rgb', 'rgba'));
+            return gradient;
+        }
+
+        // Ano
+        const ctxAno = document.getElementById('chartAno').getContext('2d');
+        new Chart(ctxAno, {
+            type: 'line',
+            data: {
+                labels: D.year.labels,
+                datasets: [{
+                    label: 'Acidentes',
+                    data: D.year.values,
+                    borderColor: palette.purple,
+                    backgroundColor: gradientFill(ctxAno, 'rgb(139, 92, 246)'),
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: palette.purple,
+                    pointBorderColor: '#020617',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Sexo
+        new Chart(document.getElementById('chartSexo'), {
+            type: 'doughnut',
+            data: {
+                labels: D.sexo.labels,
+                datasets: [{
+                    data: D.sexo.values,
+                    backgroundColor: [palette.blue, palette.pink, '#52525b'],
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#94a3b8',
+                            padding: 16,
+                            font: { size: 11, family: "'Satoshi', 'Inter', sans-serif" },
+                            usePointStyle: true,
+                            pointStyleWidth: 8
+                        }
+                    }
+                }
+            }
+        });
+
+        // Tipo
+        new Chart(document.getElementById('chartTipo'), {
+            type: 'bar',
+            data: {
+                labels: D.tipo.labels,
+                datasets: [{
+                    label: 'Quantidade',
+                    data: D.tipo.values,
+                    backgroundColor: [palette.purple, palette.blue, '#52525b'],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                ...defaultOptions,
+                plugins: {
+                    ...defaultOptions.plugins,
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // UF
+        new Chart(document.getElementById('chartUF'), {
+            type: 'bar',
+            data: {
+                labels: D.uf.labels,
+                datasets: [{
+                    label: 'Casos',
+                    data: D.uf.values,
+                    backgroundColor: palette.green,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barPercentage: 0.7
+                }]
+            },
+            options: {
+                ...defaultOptions,
+                indexAxis: 'y',
+                plugins: {
+                    ...defaultOptions.plugins,
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: { color: tickColor, font: { size: 11 } }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: tickColor, font: { size: 11 } }
+                    }
+                }
+            }
+        });
+
+        // Hora
+        const ctxHora = document.getElementById('chartHora').getContext('2d');
+        new Chart(ctxHora, {
+            type: 'line',
+            data: {
+                labels: D.hora.labels,
+                datasets: [{
+                    label: 'Acidentes',
+                    data: D.hora.values,
+                    borderColor: palette.cyan,
+                    backgroundColor: gradientFill(ctxHora, 'rgb(6, 182, 212)'),
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: palette.cyan,
+                    pointBorderColor: '#020617',
+                    pointBorderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Evolução
+        new Chart(document.getElementById('chartEvolucao'), {
+            type: 'doughnut',
+            data: {
+                labels: D.evolucao.labels,
+                datasets: [{
+                    data: D.evolucao.values,
+                    backgroundColor: [palette.blue, palette.green, '#52525b', palette.yellow, palette.red, palette.orange, palette.purple, palette.pink],
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '55%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#94a3b8',
+                            padding: 12,
+                            font: { size: 11, family: "'Satoshi', 'Inter', sans-serif" },
+                            usePointStyle: true,
+                            pointStyleWidth: 8
+                        }
+                    }
+                }
+            }
+        });
+
+        // Temperatura
+        const ctxTemp = document.getElementById('chartTempAno').getContext('2d');
+        new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+                labels: D.temp_ano.labels,
+                datasets: [{
+                    label: 'Temperatura (°C)',
+                    data: D.temp_ano.values,
+                    borderColor: palette.yellow,
+                    backgroundColor: gradientFill(ctxTemp, 'rgb(234, 179, 8)'),
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: palette.yellow,
+                    pointBorderColor: '#020617',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Humidex
+        const ctxHx = document.getElementById('chartHumidexAno').getContext('2d');
+        new Chart(ctxHx, {
+            type: 'line',
+            data: {
+                labels: D.humidex_ano.labels,
+                datasets: [{
+                    label: 'Humidex',
+                    data: D.humidex_ano.values,
+                    borderColor: palette.red,
+                    backgroundColor: gradientFill(ctxHx, 'rgb(239, 68, 68)'),
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: palette.red,
+                    pointBorderColor: '#020617',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Corpo
+        new Chart(document.getElementById('chartCorpo'), {
+            type: 'bar',
+            data: {
+                labels: D.corpo.labels,
+                datasets: [{
+                    label: 'Ocorrências',
+                    data: D.corpo.values,
+                    backgroundColor: [palette.purple, palette.blue, palette.cyan, palette.green, palette.yellow, palette.orange, palette.red, palette.pink, '#52525b', '#3f3f46'],
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barPercentage: 0.65
+                }]
+            },
+            options: {
+                ...defaultOptions,
+                plugins: {
+                    ...defaultOptions.plugins,
+                    legend: { display: false }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

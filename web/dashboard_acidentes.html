@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Acidentes de Trabalho no Brasil</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+    --bg: #f4f6f9;
+    --card: #fff;
+    --text: #2c3e50;
+    --muted: #6c757d;
+    --primary: #2563eb;
+    --danger: #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --border: #e2e8f0;
+    --shadow: 0 4px 6px -1px rgba(0,0,0,.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+body { background: var(--bg); color: var(--text); padding: 20px; }
+.container { max-width: 1400px; margin: 0 auto; }
+header { text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white; }
+header h1 { font-size: 2rem; margin-bottom: 10px; }
+header p { font-size: 1rem; opacity: 0.9; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+.kpi-card { background: var(--card); padding: 20px; border-radius: 10px; box-shadow: var(--shadow); text-align: center; transition: transform 0.2s; }
+.kpi-card:hover { transform: translateY(-2px); }
+.kpi-card h3 { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.kpi-card .value { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+.kpi-card .value.danger { color: var(--danger); }
+.kpi-card .value.success { color: var(--success); }
+.kpi-card small { color: var(--muted); font-size: 0.75rem; }
+.chart-section { background: var(--card); margin-bottom: 20px; border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.chart-header { padding: 15px 20px; background: #f8fafc; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.chart-header:hover { background: #f1f5f9; }
+.chart-container { padding: 20px; height: 350px; position: relative; }
+.chart-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; margin-bottom: 20px; }
+.humidex-section { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fcd34d; }
+.humidex-section .chart-header { background: #fff7ed; color: #92400e; }
+.correlation-section { background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%); border: 1px solid #67e8f9; }
+.correlation-section .chart-header { background: #ecfeff; color: #0e7490; }
+.correlation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 20px; }
+.correlation-card { background: white; padding: 15px; border-radius: 8px; text-align: center; }
+.correlation-card .label { font-size: 0.8rem; color: var(--muted); margin-bottom: 5px; }
+.correlation-card .value { font-size: 1.4rem; font-weight: 700; }
+.correlation-card .value.positive { color: var(--success); }
+.correlation-card .value.negative { color: var(--danger); }
+.correlation-card .value.neutral { color: var(--warning); }
+.badge { font-size: 0.7rem; background: var(--primary); color: white; padding: 3px 8px; border-radius: 12px; margin-left: 10px; }
+footer { text-align: center; margin-top: 30px; color: var(--muted); font-size: 0.85rem; padding: 20px; }
+@media (max-width: 768px) {
+    .chart-row { grid-template-columns: 1fr; }
+    .chart-container { height: 280px; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .correlation-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>📊 Acidentes de Trabalho no Brasil</h1>
+        <p>Série histórica completa · 2006 a 2024 | SINAN • INMET</p>
+    </header>
+
+    <div class="kpis">
+        <div class="kpi-card">
+            <h3>Total de Acidentes</h3>
+            <div class="value" id="k-total">-</div>
+            <small>Registros notificados</small>
+        </div>
+        <div class="kpi-card">
+            <h3>Óbitos</h3>
+            <div class="value danger" id="k-obitos">-</div>
+            <small>Evolução fatal</small>
+        </div>
+        <div class="kpi-card">
+            <h3>Temperatura Média</h3>
+            <div class="value" id="k-temp">-</div>
+            <small>Bulbo seco — INMET</small>
+        </div>
+        <div class="kpi-card">
+            <h3>Umidade Média</h3>
+            <div class="value success" id="k-umidade">-</div>
+            <small>Relativa do ar</small>
+        </div>
+        <div class="kpi-card">
+            <h3>Humidex Médio</h3>
+            <div class="value" id="k-humidex">-</div>
+            <small>Índice de estresse térmico</small>
+        </div>
+        <div class="kpi-card">
+            <h3>Anos Cobertos</h3>
+            <div class="value" id="k-anos">-</div>
+            <small>Série histórica</small>
+        </div>
+    </div>
+
+    <div class="chart-section">
+        <div class="chart-header">📈 Evolução Temporal <span class="badge">Acidentes por Ano</span></div>
+        <div class="chart-container"><canvas id="c-year"></canvas></div>
+    </div>
+
+    <div class="chart-row">
+        <div class="chart-section">
+            <div class="chart-header">👥 Perfil dos Casos <span class="badge">Desfecho Clínico</span></div>
+            <div class="chart-container"><canvas id="c-evolucao"></canvas></div>
+        </div>
+        <div class="chart-section">
+            <div class="chart-header">⚧ Distribuição por Gênero</div>
+            <div class="chart-container"><canvas id="c-sexo"></canvas></div>
+        </div>
+    </div>
+
+    <div class="chart-row">
+        <div class="chart-section">
+            <div class="chart-header">🗺️ Top 15 Estados <span class="badge">Geografia</span></div>
+            <div class="chart-container"><canvas id="c-uf"></canvas></div>
+        </div>
+        <div class="chart-section">
+            <div class="chart-header">📋 Tipo de Acidente</div>
+            <div class="chart-container"><canvas id="c-tipo"></canvas></div>
+        </div>
+    </div>
+
+    <div class="chart-row">
+        <div class="chart-section">
+            <div class="chart-header">🌡️ Temperatura Média por Ano</div>
+            <div class="chart-container"><canvas id="c-temp"></canvas></div>
+        </div>
+        <div class="chart-section">
+            <div class="chart-header">🕐 Distribuição por Hora do Dia</div>
+            <div class="chart-container"><canvas id="c-hora"></canvas></div>
+        </div>
+    </div>
+
+    <div class="chart-row">
+        <div class="chart-section">
+            <div class="chart-header">📊 Distribuição de Temperatura <span class="badge">No momento do acidente</span></div>
+            <div class="chart-container"><canvas id="c-hist"></canvas></div>
+        </div>
+        <div class="chart-section">
+            <div class="chart-header">🦴 Partes do Corpo Mais Afetadas</div>
+            <div class="chart-container"><canvas id="c-corpo"></canvas></div>
+        </div>
+    </div>
+
+    <div class="chart-section humidex-section">
+        <div class="chart-header">🌡️ Índice de Estresse Térmico (Humidex) <span class="badge">Análise Climática</span></div>
+        <div class="chart-row" style="margin: 0;">
+            <div class="chart-container">
+                <h4 style="margin-bottom: 10px; color: #92400e; text-align: center;">Evolução Temporal: Temperatura vs Humidex</h4>
+                <canvas id="c-hx-line"></canvas>
+            </div>
+            <div class="chart-container">
+                <h4 style="margin-bottom: 10px; color: #92400e; text-align: center;">Acidentes por Faixa de Risco Térmico</h4>
+                <canvas id="c-hx-bar"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-section correlation-section">
+        <div class="chart-header">🔗 Correlações: Clima vs Acidentes <span class="badge">Análise Estatística</span></div>
+        <div class="correlation-grid">
+            <div class="correlation-card">
+                <div class="label">Temperatura vs Acidentes</div>
+                <div class="value" id="corr-temp">-</div>
+            </div>
+            <div class="correlation-card">
+                <div class="label">Umidade vs Acidentes</div>
+                <div class="value" id="corr-umidade">-</div>
+            </div>
+            <div class="correlation-card">
+                <div class="label">Humidex vs Acidentes</div>
+                <div class="value" id="corr-humidex">-</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Base de dados: SINAN (Sistema de Informação de Agravos de Notificação) + INMET (Instituto Nacional de Meteorologia)</p>
+        <p style="margin-top: 5px;">Período: 2006-2024 | Dashboard gerado automaticamente</p>
+    </footer>
+</div>
+
+<script>
+const D = {"kpis": {"total": "2.530.547", "obitos": "38.427", "temp_media": "21.5°C", "umidade_media": "72.0%", "humidex_medio": "26.2", "anos": "19", "media_idade": "4025 anos"}, "year": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [1535, 19725, 31317, 35465, 44767, 60971, 75481, 88440, 83495, 87756, 85242, 92585, 100267, 110731, 176859, 221034, 301107, 410228, 503542]}, "sexo": {"labels": ["Masculino", "Feminino", "Ignorado"], "values": [1920801, 609373, 373]}, "evolucao": {"labels": ["Incapacidade Temporária", "Cura", "Ignorado", "Incapacidade Permanente Parcial", "Óbito", "Outro", "Incapacidade Permanente Total", "Óbito por Outras Causas", "8"], "values": [1130296, 829063, 321964, 50921, 38427, 38212, 5078, 2133, 35]}, "uf": {"labels": ["35", "43", "41", "31", "42", "52", "29", "33", "50", "23", "51", "26", "21", "53", "11"], "values": [833931, 298198, 254794, 222231, 113145, 96354, 88086, 72848, 64862, 63348, 53804, 47458, 34081, 33916, 33440]}, "temp": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [16.07, 20.3, 20.23, 21.2, 21.59, 21.25, 21.81, 21.32, 22.29, 22.2, 21.85, 21.85, 21.54, 21.85, 21.22, 20.61, 20.8, 21.62, 22.23]}, "tipo": {"labels": ["Típico", "Trajeto", "Ignorado"], "values": [1909967, 424927, 83695]}, "corpo": {"labels": ["Mão", "Membro Superior", "Membro Inferior", "Pé", "Cabeça", "Corpo Todo", "Olho", "Outro", "Tórax", "Ignorado"], "values": [713929, 371660, 355059, 232600, 214723, 146033, 135841, 131235, 84489, 39706]}, "hist_temp": {"labels": ["-9.0–-5.5", "-5.5–-2.1", "-2.1–1.4", "1.4–4.8", "4.8–8.3", "8.3–11.7", "11.7–15.2", "15.2–18.6", "18.6–22.1", "22.1–25.5", "25.5–29.0", "29.0–32.4", "32.4–35.9", "35.9–39.3", "39.3–42.8", "42.8–46.2", "46.2–49.7", "49.7–53.1", "53.1–56.6", "56.6–60.0"], "values": [5, 126, 1472, 4775, 17943, 63419, 176097, 493848, 645609, 541393, 333317, 187035, 51768, 7762, 261, 0, 0, 0, 0, 1]}, "hora": {"labels": ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"], "values": [20603, 16339, 12824, 12278, 15848, 29566, 70369, 141114, 171552, 191974, 210258, 155059, 101939, 120342, 152761, 156229, 144791, 106821, 70871, 44489, 31519, 24628, 22967, 18707]}, "humidex_line": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "temp": [16.07, 20.3, 20.23, 21.2, 21.59, 21.25, 21.81, 21.32, 22.29, 22.2, 21.85, 21.85, 21.54, 21.85, 21.22, 20.61, 20.8, 21.62, 22.23], "hx": [18.38, 24.23, 23.86, 25.85, 26.32, 25.78, 26.64, 25.94, 26.94, 26.96, 26.56, 26.36, 26.23, 26.63, 25.81, 24.69, 25.15, 26.54, 27.44]}, "humidex_bar": {"labels": ["Nível I", "Nível II", "Nível III", "Nível IV", "Nível V"], "values": [19644, 570293, 1568974, 361135, 278]}, "cnae": {"labels": ["85111.0", "75116.0", "41204.0", "5126.0", "47113.0", "75124.0", "85120.0", "36110.0", "55220.0", "15121.0"], "values": [64366, 35757, 21517, 20502, 15149, 12608, 11751, 11614, 11340, 11047]}, "correlations": {"temp_vs_acidentes": 0.298, "umidade_vs_acidentes": 0.07, "humidex_vs_acidentes": 0.342}};
+
+// Atualizar KPIs
+document.getElementById('k-total').textContent = D.kpis.total;
+document.getElementById('k-obitos').textContent = D.kpis.obitos;
+document.getElementById('k-temp').textContent = D.kpis.temp_media;
+document.getElementById('k-umidade').textContent = D.kpis.umidade_media;
+document.getElementById('k-humidex').textContent = D.kpis.humidex_medio;
+document.getElementById('k-anos').textContent = D.kpis.anos;
+
+// Atualizar correlações
+const corrTemp = D.correlations.temp_vs_acidentes;
+const corrUmidade = D.correlations.umidade_vs_acidentes;
+const corrHumidex = D.correlations.humidex_vs_acidentes;
+
+const corrTempEl = document.getElementById('corr-temp');
+corrTempEl.textContent = corrTemp;
+corrTempEl.className = 'value ' + (corrTemp > 0.3 ? 'positive' : corrTemp < -0.3 ? 'negative' : 'neutral');
+
+const corrUmidadeEl = document.getElementById('corr-umidade');
+corrUmidadeEl.textContent = corrUmidade;
+corrUmidadeEl.className = 'value ' + (corrUmidade > 0.3 ? 'positive' : corrUmidade < -0.3 ? 'negative' : 'neutral');
+
+const corrHumidexEl = document.getElementById('corr-humidex');
+corrHumidexEl.textContent = corrHumidex;
+corrHumidexEl.className = 'value ' + (corrHumidex > 0.3 ? 'positive' : corrHumidex < -0.3 ? 'negative' : 'neutral');
+
+// Configurações padrão dos gráficos
+const opt = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } }
+};
+
+const colors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+
+// Função auxiliar para criar gráficos
+function mk(id, type, labels, datasets, extra = {}) {
+    new Chart(document.getElementById(id), {
+        type,
+        data: { labels, datasets },
+        options: { ...opt, ...extra }
+    });
+}
+
+// Gráficos
+mk('c-year', 'line', D.year.labels, [{
+    label: 'Acidentes',
+    data: D.year.values,
+    borderColor: '#2563eb',
+    tension: 0.3,
+    fill: true,
+    backgroundColor: 'rgba(37, 99, 235, 0.1)'
+}]);
+
+mk('c-evolucao', 'doughnut', D.evolucao.labels, [{
+    data: D.evolucao.values,
+    backgroundColor: colors
+}]);
+
+mk('c-sexo', 'pie', D.sexo.labels, [{
+    data: D.sexo.values,
+    backgroundColor: ['#3b82f6', '#ec4899', '#9ca3af']
+}]);
+
+mk('c-uf', 'bar', D.uf.labels, [{
+    label: 'Casos',
+    data: D.uf.values,
+    backgroundColor: '#10b981'
+}], { indexAxis: 'y' });
+
+mk('c-temp', 'line', D.temp.labels, [{
+    label: 'Temp. Média (°C)',
+    data: D.temp.values,
+    borderColor: '#f59e0b',
+    tension: 0.3
+}]);
+
+mk('c-tipo', 'bar', D.tipo.labels, [{
+    label: 'Quantidade',
+    data: D.tipo.values,
+    backgroundColor: '#8b5cf6'
+}]);
+
+mk('c-hist', 'bar', D.hist_temp.labels, [{
+    label: 'Frequência',
+    data: D.hist_temp.values,
+    backgroundColor: '#06b6d4'
+}]);
+
+mk('c-hora', 'line', D.hora.labels, [{
+    label: 'Acidentes por Hora',
+    data: D.hora.values,
+    borderColor: '#ec4899',
+    tension: 0.4,
+    fill: true,
+    backgroundColor: 'rgba(236, 72, 153, 0.1)'
+}]);
+
+mk('c-corpo', 'bar', D.corpo.labels, [{
+    label: 'Ocorrências',
+    data: D.corpo.values,
+    backgroundColor: '#84cc16'
+}]);
+
+// Humidex - Linha temporal
+mk('c-hx-line', 'line', D.humidex_line.labels, [
+    {
+        label: 'Temperatura Média (°C)',
+        data: D.humidex_line.temp,
+        borderColor: '#3b82f6',
+        yAxisID: 'y',
+        tension: 0.3
+    },
+    {
+        label: 'Índice Humidex Médio',
+        data: D.humidex_line.hx,
+        borderColor: '#ef4444',
+        yAxisID: 'y1',
+        tension: 0.3
+    }
+], {
+    scales: {
+        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Temperatura (°C)' } },
+        y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Humidex (HX)' }, grid: { drawOnChartArea: false } }
+    }
+});
+
+// Humidex - Barras por nível
+mk('c-hx-bar', 'bar', D.humidex_bar.labels, [{
+    label: 'Acidentes Notificados',
+    data: D.humidex_bar.values,
+    backgroundColor: ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'],
+    borderRadius: 6
+}], {
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true } }
+});
+</script>
+</body>
+</html>

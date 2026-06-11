@@ -1,0 +1,29 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# R temp files
+.RData
+.Rhistory
+.Ruserdata
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS junk
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Secrets
+.env
+
+# Large files exceeding GitHub 100MB limit
+data/compiled/completeDatabase.csv
+data/imputed/hourly_imputed.zip
+data/raw/weather/hourly.zip
+data/raw/occupational/SINAN data/SINAN data csv/SINAN_2024.csv

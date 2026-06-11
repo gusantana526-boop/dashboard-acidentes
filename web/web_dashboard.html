@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Acidentes de Trabalho no Brasil</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .kpi-card .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .kpi-card h3 {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .kpi-card .value.danger { color: var(--danger); }
+        .kpi-card .value.success { color: var(--success); }
+        .kpi-card .value.warning { color: var(--warning); }
+
+        .kpi-card small {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: var(--light);
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-header .badge {
+            font-size: 0.75rem;
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-left: auto;
+        }
+
+        .chart-container {
+            padding: 25px;
+            height: 400px;
+            position: relative;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-row .section {
+            margin-bottom: 0;
+        }
+
+        .correlations {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 25px;
+        }
+
+        .corr-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #bae6fd;
+        }
+
+        .corr-card .label {
+            font-size: 0.85rem;
+            color: #0369a1;
+            margin-bottom: 8px;
+        }
+
+        .corr-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0c4a6e;
+        }
+
+        .corr-card .interpretation {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        footer {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        footer p {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .chart-row {
+                grid-template-columns: 1fr;
+            }
+
+            .kpis {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .correlations {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Dashboard de Acidentes de Trabalho no Brasil</h1>
+            <p>Análise completa da série histórica 2006-2024 • SINAN + INMET</p>
+        </header>
+
+        <div class="kpis">
+            <div class="kpi-card">
+                <div class="icon">📋</div>
+                <h3>Total de Acidentes</h3>
+                <div class="value">2,530,547</div>
+                <small>Registros notificados</small>
+            </div>
+            <div class="kpi-card">
+                <div class="icon">💀</div>
+                <h3>Óbitos</h3>
+                <div class="value danger">0</div>
+                <small>Evolução fatal</small>
+            </div>
+            <div class="kpi-card">
+                <div class="icon">🌡️</div>
+                <h3>Temperatura Média</h3>
+                <div class="value">21.5°C</div>
+                <small>Bulbo seco</small>
+            </div>
+            <div class="kpi-card">
+                <div class="icon">💧</div>
+                <h3>Umidade Média</h3>
+                <div class="value success">72.0%</div>
+                <small>Relativa do ar</small>
+            </div>
+            <div class="kpi-card">
+                <div class="icon">🔥</div>
+                <h3>Humidex Médio</h3>
+                <div class="value warning">26.2</div>
+                <small>Estresse térmico</small>
+            </div>
+            <div class="kpi-card">
+                <div class="icon">👥</div>
+                <h3>% Masculino</h3>
+                <div class="value">75.9%</div>
+                <small>Predominância</small>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                📈 Evolução Temporal de Acidentes
+                <span class="badge">2006-2024</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="chartAno"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-row">
+            <div class="section">
+                <div class="section-header">👥 Distribuição por Gênero</div>
+                <div class="chart-container">
+                    <canvas id="chartSexo"></canvas>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">📋 Tipo de Acidente</div>
+                <div class="chart-container">
+                    <canvas id="chartTipo"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-row">
+            <div class="section">
+                <div class="section-header">🏆 Top 10 Estados</div>
+                <div class="chart-container">
+                    <canvas id="chartUF"></canvas>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">🕐 Distribuição por Hora</div>
+                <div class="chart-container">
+                    <canvas id="chartHora"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                📊 Desfecho dos Acidentes
+                <span class="badge">Evolução clínica</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="chartEvolucao"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-row">
+            <div class="section">
+                <div class="section-header">🌡️ Temperatura Média por Ano</div>
+                <div class="chart-container">
+                    <canvas id="chartTempAno"></canvas>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">🔥 Humidex Médio por Ano</div>
+                <div class="chart-container">
+                    <canvas id="chartHumidexAno"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">🦴 Partes do Corpo Mais Afetadas</div>
+            <div class="chart-container">
+                <canvas id="chartCorpo"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">🔗 Correlações: Clima vs Acidentes</div>
+            <div class="correlations">
+                <div class="corr-card">
+                    <div class="label">Temperatura vs Acidentes</div>
+                    <div class="value">0.298</div>
+                    <div class="interpretation">Correlação fraca</div>
+                </div>
+                <div class="corr-card">
+                    <div class="label">Umidade vs Acidentes</div>
+                    <div class="value">0.07</div>
+                    <div class="interpretation">Correlação muito fraca</div>
+                </div>
+                <div class="corr-card">
+                    <div class="label">Humidex vs Acidentes</div>
+                    <div class="value">0.342</div>
+                    <div class="interpretation">Correlação fraca</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>Base de dados:</strong> SINAN (Sistema de Informação de Agravos de Notificação) + INMET (Instituto Nacional de Meteorologia)</p>
+            <p>Período: 2006-2024 • Total de registros: 2,530,547 acidentes</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">Dashboard gerado automaticamente • PIBIC 2024-2025</p>
+        </footer>
+    </div>
+
+    <script>
+        const data = {"kpis": {"total_acidentes": 2530547, "total_obitos": 0, "temp_media": 21.5, "umidade_media": 72.0, "humidex_medio": 26.2, "media_idade": 4025.0, "anos_cobertos": 19, "pct_masculino": 75.9}, "ano": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [1535, 19725, 31317, 35465, 44767, 60971, 75481, 88440, 83495, 87756, 85242, 92585, 100267, 110731, 176859, 221034, 301107, 410228, 503542]}, "sexo": {"labels": ["Masculino", "Feminino", "Ignorado"], "values": [1920801, 609373, 373]}, "evolucao": {"labels": [], "values": []}, "uf": {"labels": ["35.0", "43.0", "41.0", "31.0", "42.0", "52.0", "29.0", "33.0", "50.0", "23.0"], "values": [833931, 298198, 254794, 222231, 113145, 96354, 88086, 72848, 64862, 63348]}, "tipo": {"labels": [], "values": []}, "corpo": {"labels": [], "values": []}, "hora": {"labels": ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"], "values": [20603, 16339, 12824, 12278, 15848, 29566, 70369, 141114, 171552, 191974, 210258, 155059, 101939, 120342, 152761, 156229, 144791, 106821, 70871, 44489, 31519, 24628, 22967, 18707]}, "temp_ano": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [16.07, 20.3, 20.23, 21.2, 21.59, 21.25, 21.81, 21.32, 22.29, 22.2, 21.85, 21.85, 21.54, 21.85, 21.22, 20.61, 20.8, 21.62, 22.23]}, "humidex_ano": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [18.38, 24.23, 23.86, 25.85, 26.32, 25.78, 26.64, 25.94, 26.94, 26.96, 26.56, 26.36, 26.23, 26.63, 25.81, 24.69, 25.15, 26.54, 27.44]}, "correlacoes": {"temperatura": 0.298, "umidade": 0.07, "humidex": 0.342}};
+
+        // Configurações padrão
+        const defaultOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        };
+
+        const colors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#14b8a6'];
+
+        // Gráfico de Anos
+        new Chart(document.getElementById('chartAno'), {
+            type: 'line',
+            data: {
+                labels: data.ano.labels,
+                datasets: [{
+                    label: 'Acidentes',
+                    data: data.ano.values,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Gráfico de Gênero
+        new Chart(document.getElementById('chartSexo'), {
+            type: 'pie',
+            data: {
+                labels: data.sexo.labels,
+                datasets: [{
+                    data: data.sexo.values,
+                    backgroundColor: ['#3b82f6', '#ec4899', '#9ca3af']
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Gráfico de Tipo
+        new Chart(document.getElementById('chartTipo'), {
+            type: 'bar',
+            data: {
+                labels: data.tipo.labels,
+                datasets: [{
+                    label: 'Quantidade',
+                    data: data.tipo.values,
+                    backgroundColor: '#8b5cf6'
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Gráfico de UFs
+        new Chart(document.getElementById('chartUF'), {
+            type: 'bar',
+            data: {
+                labels: data.uf.labels,
+                datasets: [{
+                    label: 'Casos',
+                    data: data.uf.values,
+                    backgroundColor: '#10b981'
+                }]
+            },
+            options: { ...defaultOptions, indexAxis: 'y' }
+        });
+
+        // Gráfico de Hora
+        new Chart(document.getElementById('chartHora'), {
+            type: 'line',
+            data: {
+                labels: data.hora.labels,
+                datasets: [{
+                    label: 'Acidentes',
+                    data: data.hora.values,
+                    borderColor: '#ec4899',
+                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Gráfico de Evolução
+        new Chart(document.getElementById('chartEvolucao'), {
+            type: 'doughnut',
+            data: {
+                labels: data.evolucao.labels,
+                datasets: [{
+                    data: data.evolucao.values,
+                    backgroundColor: colors
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Gráfico de Temperatura por Ano
+        new Chart(document.getElementById('chartTempAno'), {
+            type: 'line',
+            data: {
+                labels: data.temp_ano.labels,
+                datasets: [{
+                    label: 'Temperatura (°C)',
+                    data: data.temp_ano.values,
+                    borderColor: '#f59e0b',
+                    tension: 0.3
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Gráfico de Humidex por Ano
+        new Chart(document.getElementById('chartHumidexAno'), {
+            type: 'line',
+            data: {
+                labels: data.humidex_ano.labels,
+                datasets: [{
+                    label: 'Humidex',
+                    data: data.humidex_ano.values,
+                    borderColor: '#ef4444',
+                    tension: 0.3
+                }]
+            },
+            options: defaultOptions
+        });
+
+        // Gráfico de Partes do Corpo
+        new Chart(document.getElementById('chartCorpo'), {
+            type: 'bar',
+            data: {
+                labels: data.corpo.labels,
+                datasets: [{
+                    label: 'Ocorrências',
+                    data: data.corpo.values,
+                    backgroundColor: '#84cc16'
+                }]
+            },
+            options: defaultOptions
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills *)",
+      "Skill(data-analysis)",
+      "Bash(python *)",
+      "Bash(dir *)",
+      "Bash(pip install *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\ARQUIVOS MEUS\\\\phyton codes\\\\pibic-manu\\\\data\\\\data\\\\compiled database\" -Filter \"*.html\")",
+      "Bash(Select-Object Name, Length, LastWriteTime)",
+      "Bash(Get-Item \"D:\\\\ARQUIVOS MEUS\\\\phyton codes\\\\pibic-manu\\\\data\\\\data\\\\compiled database\\\\*.html\")",
+      "Bash(Format-Table Name, Length, LastWriteTime)",
+      "Bash(Get-ChildItem \"D:\\\\ARQUIVOS MEUS\\\\phyton codes\\\\pibic-manu\\\\data\\\\data\\\\compiled database\")",
+      "Bash(Format-Table -AutoSize)",
+      "WebFetch(domain:hydradb.com)",
+      "WebSearch",
+      "Bash(curl -s https://hydradb.com/)",
+      "Bash(grep -oE '#[0-9a-fA-F]{3,6}' \"C:\\\\Users\\\\gusan\\\\.claude\\\\projects\\\\D--ARQUIVOS-MEUS-phyton-codes-pibic-manu\\\\a9feb3d2-f6b0-41da-908e-af2695df6fbb\\\\tool-results\\\\bej16abul.txt\")"
+    ]
+  }
+}

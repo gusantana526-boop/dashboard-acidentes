@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "csv-data-visualizer": {
+      "source": "ailabs-393/ai-labs-claude-skills",
+      "sourceType": "github",
+      "skillPath": "packages/skills/csv-data-visualizer/SKILL.md",
+      "computedHash": "c5db56b0a55e21ab8f8b26ddbaef7763228802cc08b6e73e68b32bef0cbc8675"
+    },
+    "data-analysis": {
+      "source": "akillness/oh-my-skills",
+      "sourceType": "github",
+      "skillPath": ".agent-skills/data-analysis/SKILL.md",
+      "computedHash": "8a4cf1487408b2e2f30a866227a56f9702adc3eb3694c1e77b6129efe070200b"
+    },
+    "python-performance-optimization": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/python-development/skills/python-performance-optimization/SKILL.md",
+      "computedHash": "393407ad12fa7c847db0e77935783908f394b883efc05442e886ad70f9fa34f5"
+    },
+    "statistics-skills": {
+      "source": "wentorai/research-plugins",
+      "sourceType": "github",
+      "skillPath": "skills/analysis/statistics/SKILL.md",
+      "computedHash": "35ab1e42b971e16c9efe06c88d3dea725c9a1cea9143884aeab9cb1087a827ca"
+    },
+    "web-development": {
+      "source": "tencentcloudbase/skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-development/SKILL.md",
+      "computedHash": "8984980c3753f057806068729f0c6b6dac65c7ebb233e03f279c25f0d34753a0"
+    }
+  }
+}
