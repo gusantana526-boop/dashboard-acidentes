@@ -63,22 +63,13 @@
             from { opacity: 0; transform: translateY(20px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-
-        .kpi-card, .section, .corr-card {
-            animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        @keyframes heroReveal {
+            from { opacity: 0; transform: translateY(-16px) scale(0.99); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .kpi-card:nth-child(1) { animation-delay: 0.08s; }
-        .kpi-card:nth-child(2) { animation-delay: 0.16s; }
-        .kpi-card:nth-child(3) { animation-delay: 0.24s; }
-        .kpi-card:nth-child(4) { animation-delay: 0.32s; }
-        .kpi-card:nth-child(5) { animation-delay: 0.40s; }
-        .kpi-card:nth-child(6) { animation-delay: 0.48s; }
-        .kpi-card:nth-child(7) { animation-delay: 0.56s; }
-        .kpi-card:nth-child(8) { animation-delay: 0.64s; }
-
-        /* Hero Header */
         .hero {
+            animation: heroReveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
             position: relative;
             background: radial-gradient(ellipse at center, rgba(30, 41, 59, 0.6) 0%, rgba(2, 6, 23, 1) 80%);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -86,6 +77,18 @@
             padding: 48px 40px;
             margin-bottom: 32px;
             overflow: hidden;
+        }
+        .hero h1 {
+            animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+        }
+        .hero p {
+            animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+        }
+        .hero-stats {
+            animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+        }
+        .hero-badge {
+            animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
         }
 
         .hero::before {
@@ -297,13 +300,19 @@
             margin-bottom: 24px;
             overflow: hidden;
             backdrop-filter: blur(20px);
-            transition: all 0.3s;
+            transition: background 0.4s ease,
+                        border-color 0.4s ease,
+                        box-shadow 0.4s ease,
+                        transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform;
         }
 
         .section:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.14);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.04),
+                        0 12px 40px rgba(0,0,0,0.5);
+            transform: translateY(-2px);
         }
 
         .section-header {
@@ -546,11 +555,23 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.15);
         }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="hero">
+            <div class="hero-badge">Dashboard Analítico</div>
             <h1>Acidentes de Trabalho<br>no Brasil</h1>
             <p>Análise completa da série histórica 2006–2024. Dados do SINAN e INMET para compreensão dos fatores climáticos e epidemiológicos.</p>
             <div class="hero-stats">
@@ -569,6 +590,10 @@
                 <div class="hero-stat">
                     <div class="hero-stat-value">92%</div>
                     <div class="hero-stat-label">Precisão</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">8</div>
+                    <div class="hero-stat-label">Índices Térmicos</div>
                 </div>
             </div>
         </div>
@@ -750,6 +775,67 @@
         <div class="section">
             <div class="section-header">
                 <div class="section-title">
+                    <div class="section-title-icon">🌡️</div>
+                    Distribuição por Índices de Estresse Térmico
+                </div>
+                <span class="badge">8 Índices — 2.524.797 registros</span>
+            </div>
+            <div class="section-body">
+                <div class="chart-container" style="height: 420px;">
+                    <canvas id="chartHeatStress"></canvas>
+                </div>
+                <div class="corr-grid" style="margin-top: 20px;">
+                    <div class="corr-card">
+                        <div class="corr-label">Índices Consistentes</div>
+                        <div class="corr-value strong">6 de 8</div>
+                        <div class="corr-desc">ET, DI, ETW, HX, MDI e WCT apresentaram distribuição similar</div>
+                    </div>
+                    <div class="corr-card">
+                        <div class="corr-label">Heat Index (HI)</div>
+                        <div class="corr-value weak">Limitado</div>
+                        <div class="corr-desc">96.4% na Faixa II — requer T>27°C e UR>40% para resultados válidos</div>
+                    </div>
+                    <div class="corr-card">
+                        <div class="corr-label">Apparent Temperature (AT)</div>
+                        <div class="corr-value" style="color:#94a3b8;">Superestimado</div>
+                        <div class="corr-desc">96.9% na Faixa V — pressão de vapor calculada sem correção por UR</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <div class="section-title-icon">📁</div>
+                    Sobre os Dados
+                </div>
+                <span class="badge">Metodologia</span>
+            </div>
+            <div class="section-body">
+                <div class="corr-grid">
+                    <div class="corr-card" style="text-align:left;">
+                        <div style="font-size:1.5rem;margin-bottom:12px;">⚡</div>
+                        <div class="corr-label" style="text-transform:none;font-size:0.9rem;font-weight:800;color:#fff;font-family:'Cabinet Grotesk',sans-serif;letter-spacing:-0.02em;margin-bottom:8px;">Série Histórica Completa</div>
+                        <div class="corr-desc" style="font-size:0.78rem;line-height:1.6;">19 anos de dados contínuos (2006–2024) do SINAN, cobrindo 2,5 milhões de notificações de acidentes de trabalho.</div>
+                    </div>
+                    <div class="corr-card" style="text-align:left;">
+                        <div style="font-size:1.5rem;margin-bottom:12px;">🌦️</div>
+                        <div class="corr-label" style="text-transform:none;font-size:0.9rem;font-weight:800;color:#fff;font-family:'Cabinet Grotesk',sans-serif;letter-spacing:-0.02em;margin-bottom:8px;">Dados Climáticos INMET</div>
+                        <div class="corr-desc" style="font-size:0.78rem;line-height:1.6;">Variáveis horárias de temperatura, umidade e vento de estações automáticas associadas geograficamente a cada acidente.</div>
+                    </div>
+                    <div class="corr-card" style="text-align:left;">
+                        <div style="font-size:1.5rem;margin-bottom:12px;">🔬</div>
+                        <div class="corr-label" style="text-transform:none;font-size:0.9rem;font-weight:800;color:#fff;font-family:'Cabinet Grotesk',sans-serif;letter-spacing:-0.02em;margin-bottom:8px;">8 Índices de Estresse Térmico</div>
+                        <div class="corr-desc" style="font-size:0.78rem;line-height:1.6;">Cálculo de ET, DI, HI, ETW, HX, AT, MDI e WCT para cada registro, permitindo análise comparativa do impacto climático nos acidentes.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
                     <div class="section-title-icon">🦴</div>
                     Partes do Corpo Mais Afetadas
                 </div>
@@ -806,7 +892,15 @@
     </div>
 
     <script>
-        const D = {"kpis": {"total": "2.530.547", "obitos": "38.427", "temp_media": "21.5°C", "umidade_media": "72.0%", "humidex_medio": "26.2", "anos": "19", "media_idade": "4025 anos"}, "year": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [1535, 19725, 31317, 35465, 44767, 60971, 75481, 88440, 83495, 87756, 85242, 92585, 100267, 110731, 176859, 221034, 301107, 410228, 503542]}, "sexo": {"labels": ["Masculino", "Feminino", "Ignorado"], "values": [1920801, 609373, 373]}, "evolucao": {"labels": ["Incapacidade Temporária", "Cura", "Ignorado", "Incap. Permanente Parcial", "Óbito", "Outro", "Incap. Permanente Total", "Óbito por Outras Causas"], "values": [1130296, 829063, 321964, 50921, 38427, 38212, 5078, 2133]}, "uf": {"labels": ["SP", "RS", "PR", "MG", "SC", "GO", "BA", "RJ", "MS", "CE", "MT", "PE", "MA", "DF", "PA"], "values": [833931, 298198, 254794, 222231, 113145, 96354, 88086, 72848, 64862, 63348, 53804, 47458, 34081, 33916, 33440]}, "tipo": {"labels": ["Típico", "Trajeto", "Ignorado"], "values": [1909967, 424927, 83695]}, "corpo": {"labels": ["Mão", "Membro Superior", "Membro Inferior", "Pé", "Cabeça", "Corpo Todo", "Olho", "Outro", "Tórax", "Ignorado"], "values": [713929, 371660, 355059, 232600, 214723, 146033, 135841, 131235, 84489, 39706]}, "hora": {"labels": ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"], "values": [20603, 16339, 12824, 12278, 15848, 29566, 70369, 141114, 171552, 191974, 210258, 155059, 101939, 120342, 152761, 156229, 144791, 106821, 70871, 44489, 31519, 24628, 22967, 18707]}, "temp_ano": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [16.07, 20.3, 20.23, 21.2, 21.59, 21.25, 21.81, 21.32, 22.29, 22.2, 21.85, 21.85, 21.54, 21.85, 21.22, 20.61, 20.8, 21.62, 22.23]}, "humidex_ano": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [18.38, 24.23, 23.86, 25.85, 26.32, 25.78, 26.64, 25.94, 26.94, 26.96, 26.56, 26.36, 26.23, 26.63, 25.81, 24.69, 25.15, 26.54, 27.07]}};
+        const D = {"kpis": {"total": "2.530.547", "obitos": "38.427", "temp_media": "21.5°C", "umidade_media": "72.0%", "humidex_medio": "26.2", "anos": "19", "media_idade": "34.5 anos"}, "year": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [1535, 19725, 31317, 35465, 44767, 60971, 75481, 88440, 83495, 87756, 85242, 92585, 100267, 110731, 176859, 221034, 301107, 410228, 503542]}, "sexo": {"labels": ["Masculino", "Feminino", "Ignorado"], "values": [1920801, 609373, 373]}, "evolucao": {"labels": ["Incapacidade Temporária", "Cura", "Ignorado", "Incap. Permanente Parcial", "Óbito", "Outro", "Incap. Permanente Total", "Óbito por Outras Causas"], "values": [1130296, 829063, 321964, 50921, 38427, 38212, 5078, 2133]}, "uf": {"labels": ["SP", "RS", "PR", "MG", "SC", "GO", "BA", "RJ", "MS", "CE", "MT", "PE", "MA", "DF", "PA"], "values": [833931, 298198, 254794, 222231, 113145, 96354, 88086, 72848, 64862, 63348, 53804, 47458, 34081, 33916, 33440]}, "tipo": {"labels": ["Típico", "Trajeto", "Ignorado"], "values": [1909967, 424927, 83695]}, "corpo": {"labels": ["Mão", "Membro Superior", "Membro Inferior", "Pé", "Cabeça", "Corpo Todo", "Olho", "Outro", "Tórax", "Ignorado"], "values": [713929, 371660, 355059, 232600, 214723, 146033, 135841, 131235, 84489, 39706]}, "hora": {"labels": ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"], "values": [20603, 16339, 12824, 12278, 15848, 29566, 70369, 141114, 171552, 191974, 210258, 155059, 101939, 120342, 152761, 156229, 144791, 106821, 70871, 44489, 31519, 24628, 22967, 18707]}, "temp_ano": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [16.07, 20.3, 20.23, 21.2, 21.59, 21.25, 21.81, 21.32, 22.29, 22.2, 21.85, 21.85, 21.54, 21.85, 21.22, 20.61, 20.8, 21.62, 22.23]}, "humidex_ano": {"labels": ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"], "values": [18.38, 24.23, 23.86, 25.85, 26.32, 25.78, 26.64, 25.94, 26.94, 26.96, 26.56, 26.36, 26.23, 26.63, 25.81, 24.69, 25.15, 26.54, 27.07]},
+  "heat_stress_indexes": {
+    "labels": ["ET", "DI", "HI", "ETW", "HX", "MDI", "WCT", "AT"],
+    "band_I":   [0.0,  0.1,  3.5,  0.0,  0.7,  0.8,  0.2,  0.0],
+    "band_II":  [1.9,  3.3, 96.4,  5.8, 16.7,  7.8,  6.9,  0.1],
+    "band_III": [40.7, 41.7, 0.0, 92.7, 63.1, 39.8, 66.0,  0.7],
+    "band_IV":  [56.1, 53.5, 0.0,  1.5, 19.5, 46.1, 26.5,  2.3],
+    "band_V":   [1.2,  1.4,  0.0,  0.0,  0.0,  5.6,  0.4, 96.9]
+  }};
 
         Chart.defaults.color = '#475569';
         Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
@@ -1086,6 +1180,69 @@
             options: defaultOptions
         });
 
+        // Heat Stress Indexes — Stacked Horizontal Bar
+        const bandColors = ['#3b82f6', '#22c55e', '#eab308', '#f97316', '#ef4444'];
+        const bandLabels = ['Faixa I (Mínimo)', 'Faixa II (Baixo)', 'Faixa III (Moderado)', 'Faixa IV (Alto)', 'Faixa V (Crítico)'];
+        const bandKeys = ['band_I', 'band_II', 'band_III', 'band_IV', 'band_V'];
+        const hsDataSet = bandLabels.map((label, i) => ({
+            label: label,
+            data: D.heat_stress_indexes[bandKeys[i]],
+            backgroundColor: bandColors[i],
+            borderWidth: 1,
+            borderColor: 'rgba(2,6,23,0.4)',
+            borderRadius: 2,
+            barPercentage: 0.85,
+            categoryPercentage: 0.9
+        }));
+
+        new Chart(document.getElementById('chartHeatStress'), {
+            type: 'bar',
+            data: {
+                labels: D.heat_stress_indexes.labels,
+                datasets: hsDataSet
+            },
+            options: {
+                ...defaultOptions,
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: { color: tickColor, font: { size: 10 }, callback: v => v + '%' },
+                        max: 100
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { size: 12, weight: '700', family: "'Cabinet Grotesk', sans-serif" } }
+                    }
+                },
+                plugins: {
+                    ...defaultOptions.plugins,
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#94a3b8',
+                            padding: 16,
+                            font: { size: 11, family: "'Satoshi', 'Inter', sans-serif" },
+                            usePointStyle: true,
+                            pointStyle: 'rect'
+                        }
+                    },
+                    tooltip: {
+                        ...defaultOptions.plugins.tooltip,
+                        callbacks: {
+                            label: function(ctx) {
+                                return `${ctx.dataset.label}: ${ctx.parsed.x.toFixed(1)}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
         // Corpo
         new Chart(document.getElementById('chartCorpo'), {
             type: 'bar',
@@ -1108,6 +1265,84 @@
                 }
             }
         });
+        // Scroll Reveal
+        const revealEls = document.querySelectorAll(
+            '.kpi-card, .section, .corr-card, .feature-card'
+        );
+        revealEls.forEach((el, i) => {
+            el.classList.add('reveal');
+            el.style.transitionDelay = `${(i % 4) * 0.08}s`;
+        });
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+        revealEls.forEach(el => revealObserver.observe(el));
+
+        // Counter-up nos KPIs
+        function animateCounter(el) {
+            const original = el.textContent.trim();
+
+            const match = original.match(/^([^\d]*)(\d[\d.]*(?:,\d+)?)(.*)$/);
+            if (!match) return;
+
+            const prefix  = match[1];
+            const numStr  = match[2];
+            const suffix  = match[3];
+
+            const hasCommaDecimal = numStr.includes(',');
+            const raw = hasCommaDecimal
+                ? numStr.replace(/\./g, '').replace(',', '.')
+                : numStr.replace(/\./g, (m, offset, str) => {
+                    const after = str.slice(offset + 1);
+                    return after.replace(/[^0-9]/g, '').length >= 3 ? '' : '.';
+                  });
+
+            const num = parseFloat(raw);
+            if (isNaN(num) || num < 10) return;
+
+            const isInt = !hasCommaDecimal && !numStr.match(/\.\d{1,2}$/);
+
+            const duration = 1400;
+            const start = performance.now();
+
+            const finalText = original;
+
+            function update(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+                const current = num * ease;
+
+                let formatted;
+                if (progress >= 1) {
+                    el.textContent = finalText;
+                    return;
+                } else if (isInt) {
+                    formatted = Math.round(current).toLocaleString('pt-BR');
+                } else {
+                    formatted = current.toFixed(1).replace('.', ',');
+                }
+                el.textContent = prefix + formatted + suffix;
+                requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
+        }
+
+        const kpiObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const valueEl = entry.target.querySelector('.kpi-value');
+                    if (valueEl) animateCounter(valueEl);
+                    kpiObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+        document.querySelectorAll('.kpi-card').forEach(el => kpiObserver.observe(el));
     </script>
 </body>
 </html>

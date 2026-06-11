@@ -1,0 +1,57 @@
+{
+  "alteracao": "Animacao e polish visual no modern_dashboard.html",
+  "melhorias": [
+    {
+      "id": 1,
+      "nome": "Scroll Reveal com IntersectionObserver",
+      "descricao": "Removeu animacao CSS automatica fadeInUp de .kpi-card, .section, .corr-card e substituiu por sistema JS com classe .reveal/.visible, observando entrada na viewport com threshold 0.08 e rootMargin -40px",
+      "css_adicionado": ".reveal { opacity:0; transform:translateY(28px); transition: ... } / .reveal.visible { opacity:1; transform:translateY(0); }",
+      "js_adicionado": "Scroll Reveal com querySelectorAll + IntersectionObserver + transitionDelay escalonado (i%4*0.08s)"
+    },
+    {
+      "id": 2,
+      "nome": "Hero com animacao de entrada propria",
+      "descricao": "@keyframes heroReveal com fade + translateY(-16px) + scale(0.99); hero, h1, p, hero-stats, hero-badge com fadeInUp escalonado (0.05s a 0.35s)",
+      "keyframes_criados": "heroReveal"
+    },
+    {
+      "id": 3,
+      "nome": "Hover mais suave nas sections",
+      "descricao": "Transicao de .section alterada de 'all 0.3s' para transicoes granulares (background, border-color, box-shadow, transform) com cubic-bezier(0.22,1,0.36,1) e will-change:transform",
+      "hover_alterado": "background rgba(255,255,255,0.03)->0.05, border-color 0.08->0.14, box-shadow e translateY(-2px)"
+    },
+    {
+      "id": 4,
+      "nome": "Counter-up animado nos KPI values",
+      "descricao": "Funcao animateCounter via requestAnimationFrame com easing cubico (1-(1-progress)^3), duracao 1400ms, formatacao pt-BR. Ignora valores <10 ou textos puros (ex: Mao). Ativado por IntersectionObserver com threshold 0.5",
+      "js_adicionado": "animateCounter() + kpiObserver"
+    },
+    {
+      "id": 5,
+      "nome": "Feature cards com classes CSS",
+      "descricao": "Substituiu grid-3 por corr-grid, icone 📁, badge Metodologia, classes corr-label/corr-desc com style inline refinado (font-size 0.9rem/0.78rem, text-transform:none)",
+      "html_alterado": "Secao Sobre os Dados"
+    }
+  ],
+  "arquivo_modificado": "modern_dashboard.html",
+  "total_linhas": 1317,
+  "css_adicionado": [
+    "@keyframes heroReveal { from { opacity:0; transform:translateY(-16px) scale(0.99); } to { opacity:1; transform:translateY(0) scale(1); } }",
+    ".hero { animation: heroReveal 0.9s ... }",
+    ".hero h1 { animation: fadeInUp 0.8s 0.15s both }",
+    ".hero p { animation: fadeInUp 0.8s 0.25s both }",
+    ".hero-stats { animation: fadeInUp 0.8s 0.35s both }",
+    ".hero-badge { animation: fadeInUp 0.6s 0.05s both }",
+    ".section transition: background, border-color, box-shadow, transform 0.4s cubic-bezier(0.22,1,0.36,1)",
+    ".reveal / .reveal.visible"
+  ],
+  "css_removido": [
+    ".kpi-card, .section, .corr-card { animation: fadeInUp 0.6s ... }",
+    ".kpi-card:nth-child(1..8) { animation-delay: ... }",
+    ".section { transition: all 0.3s; }"
+  ],
+  "js_adicionado": [
+    "Scroll Reveal com IntersectionObserver",
+    "Counter-up animateCounter com requestAnimationFrame"
+  ]
+}

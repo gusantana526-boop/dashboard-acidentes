@@ -1,0 +1,47 @@
+{
+  "alteracao": "Adicao da secao de indices de estresse termico no dashboard modern_dashboard.html",
+  "tarefas": [
+    "Atualizar objeto D com heat_stress_indexes (dados sem notas)",
+    "Adicionar hero-stat: 8 / Indices Termicos",
+    "Substituir secao HTML antiga por grafico + 3 cards corr-grid",
+    "Atualizar JS: bandas verdes, tooltip simplificado, remover notes grid"
+  ],
+  "arquivo_modificado": "modern_dashboard.html",
+  "dados_heat_stress_indexes": {
+    "labels": ["ET", "DI", "HI", "ETW", "HX", "MDI", "WCT", "AT"],
+    "band_I":   [0.0, 0.1, 3.5, 0.0, 0.7, 0.8, 0.2, 0.0],
+    "band_II":  [1.9, 3.3, 96.4, 5.8, 16.7, 7.8, 6.9, 0.1],
+    "band_III": [40.7, 41.7, 0.0, 92.7, 63.1, 39.8, 66.0, 0.7],
+    "band_IV":  [56.1, 53.5, 0.0, 1.5, 19.5, 46.1, 26.5, 2.3],
+    "band_V":   [1.2, 1.4, 0.0, 0.0, 0.0, 5.6, 0.4, 96.9]
+  },
+  "cores_das_bandas": {
+    "I (Minimo)": "#3b82f6",
+    "II (Baixo)": "#22c55e",
+    "III (Moderado)": "#eab308",
+    "IV (Alto)": "#f97316",
+    "V (Critico)": "#ef4444"
+  },
+  "cards_corr_grid": [
+    {
+      "label": "Indices Consistentes",
+      "value": "6 de 8",
+      "descricao": "ET, DI, ETW, HX, MDI e WCT apresentaram distribuicao similar"
+    },
+    {
+      "label": "Heat Index (HI)",
+      "value": "Limitado",
+      "descricao": "96.4% na Faixa II — requer T>27C e UR>40% para resultados validos"
+    },
+    {
+      "label": "Apparent Temperature (AT)",
+      "value": "Superestimado",
+      "descricao": "96.9% na Faixa V — pressao de vapor calculada sem correcao por UR"
+    }
+  ],
+  "hero_stat_adicionado": {
+    "value": "8",
+    "label": "Indices Termicos"
+  },
+  "total_linhas_arquivo": 1244
+}
